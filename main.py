@@ -1,6 +1,7 @@
 import sys
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QDialog, QApplication, QFileDialog, QMainWindow
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import *
 import numpy as np
@@ -68,45 +69,69 @@ class MainWindow(QMainWindow):
             print(proba)
         except Exception as e:
             print(e)
+            msg = QMessageBox()
+            msg.setWindowTitle('Предупреждение')
+            msg.setText("Ошибка: выберите входные данные для анализа.")
+            xxx = msg.exec_()
         return 0
 
     def save_result(self):
         global prediction
         global df
         global proba
-        width = df['X'].unique().shape[0]
-        height = df['Y'].unique().shape[0]
-        try:
-            name = QFileDialog.getSaveFileName(self, 'Save File', r"C:\\", "TXT files (*.txt)")
-            print("Path to save: ")
-            print(name)
-            if name != ('', '') and prediction is not None:
-                try:
-                    output = np.reshape(prediction, (-1, width))
-                    #pd.DataFrame(output).to_csv(name[0])
-                    np.savetxt(name[0], output.astype(int), fmt='%d', delimiter=",")
-                except:
-                    print('Invalid directory')
-        except Exception as e:
-            print(e)
+        if prediction is None:
+            msg = QMessageBox()
+            msg.setWindowTitle('Предупреждение')
+            msg.setText("Ошибка: попытка сохранить результат до проведения анализа.")
+            xxx = msg.exec_()
+        else:
+            width = df['X'].unique().shape[0]
+            height = df['Y'].unique().shape[0]
+            try:
+                name = QFileDialog.getSaveFileName(self, 'Save File', r"C:\\", "TXT files (*.txt)")
+                print("Path to save: ")
+                print(name)
+                if name != ('', '') and prediction is not None:
+                    try:
+                        output = np.reshape(prediction, (-1, width))
+                        #pd.DataFrame(output).to_csv(name[0])
+                        np.savetxt(name[0], output.astype(int), fmt='%d', delimiter=",")
+                    except:
+                        print('Invalid directory')
+                        msg = QMessageBox()
+                        msg.setWindowTitle('Предупреждение')
+                        msg.setText("Ошибка: некорректный путь для сохранения результата.")
+                        xxx = msg.exec_()
+            except Exception as e:
+                print(e)
 
     def select_target(self):
         global complete
         global measurements
         global df
         global X
-        complete = False
-        data = QFileDialog.getOpenFileName(self, "Open file", r"C:\\", "TXT files (*.txt)")
-        self.filename.setText(data[0])
-        df = pd.read_csv(data[0], sep='\t', skiprows=[0],
-                         header=None, names=['X', 'Y', 'Wave', 'Intensity'])
-        measurements = []
-        for i in range(df.shape[0] // 1015):
-            measurements.append(
-                df[['Intensity']][i * len(df['Wave'].unique()):(i + 1) * len(df['Wave'].unique())].to_numpy())
-        X = np.asarray(measurements)
-        oldShape = X.shape
-        X = X.reshape(oldShape[0], oldShape[1])
+        global prediction
+        prediction = None
+        df = None
+        X = None
+        try:
+            complete = False
+            data = QFileDialog.getOpenFileName(self, "Open file", r"C:\\", "TXT files (*.txt)")
+            self.filename.setText(data[0])
+            df = pd.read_csv(data[0], sep='\t', skiprows=[0],
+                             header=None, names=['X', 'Y', 'Wave', 'Intensity'])
+            measurements = []
+            for i in range(df.shape[0] // 1015):
+                measurements.append(
+                    df[['Intensity']][i * len(df['Wave'].unique()):(i + 1) * len(df['Wave'].unique())].to_numpy())
+            X = np.asarray(measurements)
+            oldShape = X.shape
+            X = X.reshape(oldShape[0], oldShape[1])
+        except:
+            msg = QMessageBox()
+            msg.setWindowTitle('Предупреждение')
+            msg.setText("Ошибка: неверный формат входных данных.")
+            xxx = msg.exec_()
 
 
 def show_window():

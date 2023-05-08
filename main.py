@@ -84,7 +84,7 @@ class MainWindow(QMainWindow):
                 try:
                     output = np.reshape(prediction, (-1, width))
                     #pd.DataFrame(output).to_csv(name[0])
-                    np.savetxt(name[0], output, delimiter=",")
+                    np.savetxt(name[0], output.astype(int), fmt='%d', delimiter=",")
                 except:
                     print('Invalid directory')
         except Exception as e:
